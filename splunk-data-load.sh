@@ -5,7 +5,7 @@
 # 1. Delete all events in the specified INDEX
 # 2. Reload the input, fields, transforms, and props configs
 # 3. oneshot load all of the files in specified directory using the defined sourcetype and INDEX
-# 4. Count the number
+# 4. Count the number of events and show the field summary
 
 #SPLUNK_HOST=localhost:8089
 SPLUNK_HOST=localhost:8091
@@ -16,7 +16,6 @@ SOURCETYPE=_json
 DIRECTORY=~tmuth/Temp/fio-test
 
 function splunk_search {
-  local port="${1:-8000}"
   curl -k -u ${SPLUNK_USERNAME}:${SPLUNK_PASS}  \
     https://${SPLUNK_HOST}/services/search/jobs/ \
     -d search="${1}" \

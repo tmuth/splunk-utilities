@@ -17,7 +17,8 @@ f = open(sys.argv[4], "w")
 i = 1
 while i <= int(sys.argv[1]) :
     x=uuid.uuid4()
-    f.write(str(x)+'\n')
+    y=random.randint(1,1001)
+    f.write(str(x)+','+str(y)+'\n')
     i += 1
 f.close()
 
@@ -35,7 +36,8 @@ for line in lines:
 i = 1
 while i <= int(sys.argv[3]) :
     x=uuid.uuid4()
-    f.write(str(x)+'\n')
+    y=random.randint(1,1001)
+    f.write(str(x)+','+str(y)+'\n')
     i += 1
 
 f.close()

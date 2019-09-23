@@ -29,6 +29,8 @@ function config_reload {
 }
 
 splunk_search "search index=${INDEX} | delete"
+# cant delete metrics, so:
+# splunk clean eventdata -index ${INDEX}
 
 config_reload "conf-inputs"
 config_reload "conf-fields"

@@ -2,7 +2,7 @@
 
 # This script is meant to streamline the process of getting files into Splunk.
 # The goal is to:
-# 1. Delete all events in the specified INDEX
+# 1. Delete and recreate the index in the specified app (necessary for metrics)
 # 2. Reload the input, fields, transforms, and props configs
 # 3. oneshot load all of the files in specified directory using the defined sourcetype and INDEX
 # 4. Count the number of events and show the field summary

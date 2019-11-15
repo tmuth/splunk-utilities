@@ -11,9 +11,10 @@
 SPLUNK_HOST=localhost:8089
 SPLUNK_USERNAME=admin
 SPLUNK_PASS=welcome1
-INDEX=drive_error_metrics
-SOURCETYPE=prometheus:metric
-DIRECTORY=/Users/tmuth/Downloads/data-sample
+INDEX=metrics_a
+APP_NAME=drive_metrics
+SOURCETYPE="prometheus:metric:ts2"
+DIRECTORY=/Users/tmuth/Downloads/metric-sample
 
 function splunk_search {
   curl -k -u ${SPLUNK_USERNAME}:${SPLUNK_PASS}  \
@@ -25,28 +26,48 @@ function splunk_search {
 function config_reload {
   local CONFIG="${1}"
   curl -k -u ${SPLUNK_USERNAME}:${SPLUNK_PASS}  \
-    -X POST https://${SPLUNK_HOST}/services/configs/${CONFIG}/_reload
+    -X GET https://${SPLUNK_HOST}/servicesNS/nobody/search/admin/${CONFIG}/_reload
+    #-X POST https://${SPLUNK_HOST}/services/configs/${CONFIG}/_reload
+    /servicesNS/nobody/search/admin/props-extract/_reload
 }
 
-#splunk_search "search index=${INDEX} | delete"
-# cant delete metrics, so:
-# splunk clean eventdata -index ${INDEX}
+# delete the metrics index
+curl -k -u ${SPLUNK_USERNAME}:${SPLUNK_PASS}  \
+  -X DELETE https://${SPLUNK_HOST}/servicesNS/nobody/${APP_NAME}/data/indexes/${INDEX}
+# create the metrics index
+curl -k -u ${SPLUNK_USERNAME}:${SPLUNK_PASS}  \
+ https://${SPLUNK_HOST}/servicesNS/nobody/${APP_NAME}/data/indexes  \
+    -d name=${INDEX} \
+    -d datatype=metric
+
 
 config_reload "conf-inputs"
-config_reload "conf-fields"
-config_reload "conf-transforms"
-config_reload "conf-props"
+#config_reload "conf-fields"
+#config_reload "conf-transforms"
+#config_reload "conf-props"
+
+config_reload "props-eval"
+config_reload "props-extract"
+config_reload "props-lookup"
+config_reload "transforms-extract"
+config_reload "transforms-lookup/"
+config_reload "transforms-reload"
+config_reload "metric-schema-reload"
+#config_reload ""
+
 
 for i in `ls -1 ${DIRECTORY}`
 do
   echo $i
-  splunk add oneshot ${DIRECTORY}/$i -index ${INDEX} -sourcetype ${SOURCETYPE} -host foo ;
+  splunk add oneshot ${DIRECTORY}/$i -index "${INDEX}" -sourcetype "${SOURCETYPE}" -host foo ;
 done
 
 echo "Waiting a few seconds so some of the files will be indexed..."
-sleep 3
+sleep 2
 
-splunk_search "| mcatalog values(metric_name) WHERE index=${INDEX} | stats count "
+metric_count=`splunk_search "| msearch index=${INDEX} | stats count "`
+echo ${metric_count}
 splunk_search "| mcatalog values(metric_name) WHERE index=${INDEX}"
-
-# splunk_search "search index=${INDEX} | fieldsummary | fields field,count"
+splunk_search "| mcatalog values(_dims) WHERE index=${INDEX}"
+splunk_search "| msearch index=${INDEX} | head 5 | table _raw"
+splunk_search "| mstats avg(_value) as value WHERE metric_name=* AND index=${INDEX} span=10s by metric_name | table * | head 10 | fields - _time"
